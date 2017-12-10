@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Breakoutish</string>
+    <string name="play">PLAY</string>
+    <string name="quit">QUIT</string>
+    <string name="axis">axis: %.3f</string>
+    <string name="score">score: %d</string>
+    <string name="lives">lives: %d</string>
+</resources>
