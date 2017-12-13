@@ -8,11 +8,24 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
 import android.widget.RelativeLayout
+import io.github.vekat.gamepad.api.Gamepad
+import io.github.vekat.gamepad.api.GamepadEvent
+import io.github.vekat.gamepad.api.ViewHolder
+import io.github.vekat.gamepad.api.gamepad
+import io.github.vekat.gamepad.implementations.EulerAngles
+import io.github.vekat.gamepad.implementations.Orientation
+import io.github.vekat.gamepad.implementations.axisButton
+import io.github.vekat.gamepad.implementations.orientation
 import kotlinx.android.synthetic.main.activity_main.view.*
+import kotlin.math.sin
+
+lateinit var config: Gamepad.() -> Unit
 
 class MainActivity : AppCompatActivity() {
   private lateinit var menuView: MenuView
+  private lateinit var gamepad: Gamepad
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -20,6 +33,33 @@ class MainActivity : AppCompatActivity() {
     menuView = MenuView(this)
 
     setContentView(menuView)
+
+    config = {
+      axisButton {
+        ready = true
+        orientation("o")
+
+        handler = { map ->
+          val data = map.get<Orientation, EulerAngles>("o")!!
+
+          data.azimuth
+        }
+      }
+    }
+
+    gamepad = menuView.gamepad(config)
+  }
+
+  override fun onResume() {
+    super.onResume()
+
+    gamepad.enableInputEvents()
+  }
+
+  override fun onPause() {
+    super.onPause()
+
+    gamepad.disableInputEvents()
   }
 
   fun startGameActivity() {
@@ -37,7 +77,8 @@ class MainActivity : AppCompatActivity() {
   /**
    * Compound View to control the game menu.
    */
-  inner class MenuView(context: Context) : RelativeLayout(context) {
+  inner class MenuView(context: Context) : RelativeLayout(context), ViewHolder {
+    override val instance: View = this
     private var screenWidth: Int
     private var screenHeight: Int
 
@@ -46,11 +87,14 @@ class MainActivity : AppCompatActivity() {
     private var downY: Float = 0f
     private val moveThreshold: Float = 20f
 
+    private var hasOffset: Boolean = false
+    private var offset: Float = 0f
+
     /**
      * A value inside the range [-1, 1], representing the X coordinate of the latest screen touch
      * from left to right. E.g.: if (xRelativeToWidth == 0f) the latest touch was in the middle.
      */
-    var xRelativeToWidth: Float = 0f
+    private var xRelativeToWidth: Float = 0f
 
     init {
       LayoutInflater.from(context).inflate(R.layout.activity_main, this, true)
@@ -63,6 +107,23 @@ class MainActivity : AppCompatActivity() {
       screenHeight = outSize.y
 
       updateView()
+    }
+
+    override fun onGamepadEvent(event: GamepadEvent) {
+      //debugLog(event.toString())
+
+      if (event.axis.isNotEmpty()) {
+
+        if (!hasOffset) {
+          hasOffset = true
+
+          offset = event.axis[0]
+        }
+
+        xRelativeToWidth = sin(event.axis[0] - offset)
+
+        updateView()
+      }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

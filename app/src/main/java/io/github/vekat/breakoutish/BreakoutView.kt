@@ -10,8 +10,13 @@ import android.os.HandlerThread
 import android.view.Display
 import android.view.MotionEvent
 import android.view.SurfaceView
+import android.view.View
+import io.github.vekat.gamepad.api.GamepadEvent
+import io.github.vekat.gamepad.api.ViewHolder
+import kotlin.math.sin
 
-class BreakoutView(context: Context, display: Display) : SurfaceView(context), Runnable {
+class BreakoutView(context: Context, display: Display) : SurfaceView(context), Runnable, ViewHolder {
+  override val instance: View = this
   private var gameThread: HandlerThread? = null
   private var gameHandler: Handler? = null
 
@@ -42,6 +47,9 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
   private var score = 0
 
   private var lives = 3
+
+  private var hasOffset: Boolean = false
+  private var offset: Float = 0f
 
   init {
     val outSize = Point()
@@ -127,6 +135,10 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
       touchXRatio + 0.05f < paddleCenterXRatio -> Paddle.LEFT
       else -> Paddle.NONE
     }
+    //}
+    //} else {
+    //  paddle.movement = Paddle.NONE
+    //}
 
     paddle.update(dt)
     ball.update(dt)
@@ -224,6 +236,19 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
 
     gameThread = null
     gameHandler = null
+  }
+
+  override fun onGamepadEvent(event: GamepadEvent) {
+    if (event.axis.isNotEmpty()) {
+
+      if (!hasOffset) {
+        hasOffset = true
+
+        offset = event.axis[0]
+      }
+
+      touchXRatio = (1f + sin(event.axis[0] - offset)) / 2f
+    }
   }
 
   override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
