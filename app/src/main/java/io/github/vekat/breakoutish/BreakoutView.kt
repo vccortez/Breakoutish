@@ -11,9 +11,6 @@ import android.view.Display
 import android.view.MotionEvent
 import android.view.SurfaceView
 
-const val UPDATES_PER_MS = 30
-const val DT = 1000f / UPDATES_PER_MS
-
 class BreakoutView(context: Context, display: Display) : SurfaceView(context), Runnable {
   private var gameThread: HandlerThread? = null
   private var gameHandler: Handler? = null
@@ -30,7 +27,6 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
   private var screenWidth: Int = 0
   private var screenHeight: Int = 0
 
-  private var isTouching: Boolean = false
   private var touchXRatio: Float = 0.5f
   private var paddleCenterXRatio: Float = 0f
 
@@ -63,6 +59,8 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
   }
 
   private fun resetGameState() {
+    paused = true
+
     val bricksPerColumn = screenWidth / brickSize
     val bricksPerRow = (screenHeight / 2) / brickSize
 
@@ -88,51 +86,46 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
   }
 
   override fun run() {
-    var alpha = 0f
-    var accumulator = 0f
-
-    var lastFrameTime = 0L
+    var dt = STEP
+    var accumulator = 0.0
 
     while (running) {
-      val startTime = System.currentTimeMillis()
+      val t = System.currentTimeMillis()
 
       if (!paused) {
-        accumulator += lastFrameTime
+        accumulator += dt
 
-        while (accumulator >= DT) {
-          update(DT)
-          accumulator -= DT
+        while (accumulator >= STEP) {
+          accumulator -= STEP
+
+          update(STEP.toFloat())
         }
-
-        alpha = accumulator / (DT * DT)
       }
 
       if (holder.surface.isValid) {
         try {
           canvas = holder.lockCanvas()
+
           synchronized(holder) {
-            drawToSurface(canvas, alpha)
+            drawToSurface((accumulator / STEP).toFloat())
           }
         } finally {
           holder.unlockCanvasAndPost(canvas)
         }
       }
 
-      lastFrameTime = System.currentTimeMillis() - startTime
+      dt = (System.currentTimeMillis() - t) / 1000.0
     }
   }
 
   private fun update(dt: Float) {
 
-    if (isTouching) {
-      when {
-        touchXRatio - 0.025 <= paddleCenterXRatio && touchXRatio + 0.025 >= paddleCenterXRatio ->
-          paddle.movement = Paddle.NONE
-        touchXRatio > paddleCenterXRatio -> paddle.movement = Paddle.RIGHT
-        touchXRatio < paddleCenterXRatio -> paddle.movement = Paddle.LEFT
-      }
-    } else {
-      paddle.movement = Paddle.NONE
+    paddleCenterXRatio = paddle.rect.centerX() / screenWidth
+
+    paddle.movement = when {
+      touchXRatio - 0.05f > paddleCenterXRatio -> Paddle.RIGHT
+      touchXRatio + 0.05f < paddleCenterXRatio -> Paddle.LEFT
+      else -> Paddle.NONE
     }
 
     paddle.update(dt)
@@ -158,7 +151,6 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
       lives--
 
       if (lives == 0) {
-        paused = true
         resetGameState()
       }
     }
@@ -178,26 +170,33 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
       ball.reverseXVelocity()
     }
 
+    if (paddle.rect.left < 0f) {
+      paddle.offsetTo(x = 0f)
+      paddle.movement = Paddle.NONE
+    } else if (paddle.rect.right > screenWidth) {
+      paddle.offsetTo(x = screenWidth - paddle.width)
+      paddle.movement = Paddle.NONE
+    }
+
     if (bricks.none { it.visible }) {
-      paused = true
       resetGameState()
     }
   }
 
-  private fun drawToSurface(canvas: Canvas, alpha: Float) {
+  private fun drawToSurface(alpha: Float) {
     canvas.drawColor(Color.WHITE)
 
     paint.color = Color.BLACK
 
-    paddle.draw(alpha, canvas, paint)
+    paddle.draw(STEP.toFloat(), alpha, canvas, paint)
 
     paint.color = Color.RED
 
-    ball.draw(alpha, canvas, paint)
+    ball.draw(STEP.toFloat(), alpha, canvas, paint)
 
     paint.color = Color.BLACK
 
-    bricks.filter { it.visible }.forEach { it.draw(alpha, canvas, paint) }
+    bricks.filter { it.visible }.forEach { it.draw(STEP.toFloat(), alpha, canvas, paint) }
 
     paint.color = Color.BLACK
 
@@ -205,6 +204,7 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
 
     canvas.drawText(resources.getString(R.string.score, score), unit * 0.5f, (screenHeight / 2) + unit.toFloat(), paint)
     canvas.drawText(resources.getString(R.string.lives, lives), unit * 0.5f, (screenHeight / 2) + (unit * 3).toFloat(), paint)
+    canvas.drawText(resources.getString(R.string.axis, touchXRatio), unit * 0.5f, (screenHeight / 2) + (unit * 5).toFloat(), paint)
   }
 
   fun resume() {
@@ -228,24 +228,20 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
 
   override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
     when (motionEvent.action and MotionEvent.ACTION_MASK) {
-
       MotionEvent.ACTION_DOWN -> {
         paused = false
-        isTouching = true
-        touchXRatio = motionEvent.x / screenWidth
-        paddleCenterXRatio = paddle.rect.centerX() / screenWidth
+
+        updateTouchX(motionEvent.x)
       }
 
-      MotionEvent.ACTION_MOVE -> {
-        touchXRatio = motionEvent.x / screenWidth
-        paddleCenterXRatio = paddle.rect.centerX() / screenWidth
-      }
-
-      MotionEvent.ACTION_UP -> {
-        isTouching = false
+      MotionEvent.ACTION_MOVE, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+        updateTouchX(motionEvent.x)
       }
     }
     return true
   }
 
+  private fun updateTouchX(motionEventX: Float) {
+    touchXRatio = motionEventX / screenWidth
+  }
 }

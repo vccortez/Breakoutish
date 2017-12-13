@@ -16,23 +16,23 @@ class Paddle(unit: Int) : GameEntity {
 
   override val rect: RectF = RectF(0f, 0f, width, height)
 
-  private val velocity: Float = 450f
+  private val velocity: Float = 250f
 
   var movement = NONE
 
   override fun update(delta: Float) {
     when (movement) {
-      LEFT -> offset(-velocity / delta)
-      RIGHT -> offset(+velocity / delta)
+      LEFT -> offset(-velocity * delta)
+      RIGHT -> offset(+velocity * delta)
     }
   }
 
-  override fun draw(alpha: Float, canvas: Canvas, paint: Paint) {
+  override fun draw(delta: Float, alpha: Float, canvas: Canvas, paint: Paint) {
     val displayRect = RectF(rect)
 
     when (movement) {
-      LEFT -> displayRect.offset(-velocity * alpha, 0f)
-      RIGHT -> displayRect.offset(+velocity * alpha, 0f)
+      LEFT -> displayRect.offset(-velocity * delta * alpha, 0f)
+      RIGHT -> displayRect.offset(+velocity * delta * alpha, 0f)
     }
 
     canvas.drawRect(displayRect, paint)

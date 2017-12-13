@@ -16,7 +16,7 @@ data class Brick(private val row: Int, private val column: Int, private val size
     (row * size) + size - padding
   )
 
-  override fun draw(alpha: Float, canvas: Canvas, paint: Paint) {
+  override fun draw(delta: Float, alpha: Float, canvas: Canvas, paint: Paint) {
     canvas.drawRect(rect, paint)
   }
 }

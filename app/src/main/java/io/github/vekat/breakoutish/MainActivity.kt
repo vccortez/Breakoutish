@@ -12,7 +12,6 @@ import android.widget.RelativeLayout
 import kotlinx.android.synthetic.main.activity_main.view.*
 
 class MainActivity : AppCompatActivity() {
-
   private lateinit var menuView: MenuView
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     private val moveThreshold: Float = 20f
 
     /**
-     * A value inside the range [-1, 1], representing the X offsetTo of the latest screen touch
+     * A value inside the range [-1, 1], representing the X coordinate of the latest screen touch
      * from left to right. E.g.: if (xRelativeToWidth == 0f) the latest touch was in the middle.
      */
     var xRelativeToWidth: Float = 0f

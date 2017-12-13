@@ -15,5 +15,5 @@ interface GameEntity {
 
   fun update(delta: Float) = Unit
 
-  fun draw(alpha: Float, canvas: Canvas, paint: Paint)
+  fun draw(delta: Float, alpha: Float, canvas: Canvas, paint: Paint)
 }

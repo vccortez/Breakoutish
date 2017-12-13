@@ -7,24 +7,24 @@ import android.graphics.RectF
 data class Ball(val size: Int) : GameEntity {
   override val rect: RectF = RectF(0f, 0f, 0f + size, 0f + size)
 
-  private val velocity: Float = 350f
+  private val velocity: Float = 200f
 
   private var xDirection: Int = 1
   private var yDirection: Int = -1
 
   override fun update(delta: Float) {
     offset(
-      (velocity * xDirection) / delta,
-      (velocity * yDirection) / delta
+      (velocity * xDirection * delta),
+      (velocity * yDirection * delta)
     )
   }
 
-  override fun draw(alpha: Float, canvas: Canvas, paint: Paint) {
+  override fun draw(delta: Float, alpha: Float, canvas: Canvas, paint: Paint) {
     val displayRect = RectF(rect)
 
     displayRect.offset(
-      velocity * xDirection * alpha,
-      velocity * yDirection * alpha
+      velocity * xDirection * delta * alpha,
+      velocity * yDirection * delta * alpha
     )
 
     canvas.drawRect(displayRect, paint)
