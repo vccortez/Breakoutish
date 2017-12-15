@@ -10,32 +10,44 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.widget.RelativeLayout
 import kotlinx.android.synthetic.main.activity_main.view.*
+import java.lang.Math.sin
 
 class MainActivity : AppCompatActivity() {
+  /**
+   * Declara uma instância de MenuView que será
+   * inicializada dentro do método `onCreate()`.
+   */
   private lateinit var menuView: MenuView
+
+  // TODO: declarar variáveis necessárias [Tarefa A - Passo 2]
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    // Inicializa a instância de MenuView
     menuView = MenuView(this)
 
     setContentView(menuView)
+
+    // TODO: inicializar e configurar objetos necessários [Tarefa A - Passo 2]
   }
 
-  fun startGameActivity() {
-    startActivity(Intent(this, BreakoutActivity::class.java))
+  override fun onResume() {
+    super.onResume()
+
+    // TODO: implementar ação quando a Activity for iniciada [Tarefa A - Passo 3]
   }
 
-  fun quitActivity() {
-    finish()
-  }
+  override fun onPause() {
+    super.onPause()
 
-  fun debugLog(message: String) {
-    Log.d(this.localClassName, message)
+    // TODO: implementar ação quando a Activity for pausada [Tarefa A - Passo 3]
   }
 
   /**
-   * Compound View to control the game menu.
+   * Essa classe interna implementa a View do menu inicial do jogo com dois
+   * botões inativos e uma seta que segue o toque do jogador.
+   * TODO: adicionar e implementar uma interface que receba eventos [Tarefa A - Passo 1]
    */
   inner class MenuView(context: Context) : RelativeLayout(context) {
     private var screenWidth: Int
@@ -50,7 +62,7 @@ class MainActivity : AppCompatActivity() {
      * A value inside the range [-1, 1], representing the X coordinate of the latest screen touch
      * from left to right. E.g.: if (xRelativeToWidth == 0f) the latest touch was in the middle.
      */
-    var xRelativeToWidth: Float = 0f
+    private var xRelativeToWidth: Float = 0f
 
     init {
       LayoutInflater.from(context).inflate(R.layout.activity_main, this, true)
@@ -88,6 +100,7 @@ class MainActivity : AppCompatActivity() {
 
             // Range conversion from [0, 1] to [-1, 1]
             xRelativeToWidth = (xToWidthRatio * 2) - 1
+
             updateView()
           }
 
@@ -102,8 +115,8 @@ class MainActivity : AppCompatActivity() {
       super.performClick()
 
       when (true) {
-        play_label.isEnabled -> startGameActivity()
-        quit_label.isEnabled -> quitActivity()
+        play_label.isEnabled -> iniciarBreakoutActivity()
+        quit_label.isEnabled -> fecharActivity()
       }
 
       return true
@@ -129,5 +142,25 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
+    // TODO: chamar essa função com o valor azimuth da orientação [Tarefa A - Passo 4]
+    private fun atualizarEixo(azimuth: Float) {
+      val seno = sin(azimuth.toDouble()).toFloat()
+
+      xRelativeToWidth = seno
+
+      updateView()
+    }
+  }
+
+  fun iniciarBreakoutActivity() {
+    startActivity(Intent(this, BreakoutActivity::class.java))
+  }
+
+  fun fecharActivity() {
+    finish()
+  }
+
+  fun debugLog(message: String) {
+    Log.d(this.localClassName, message)
   }
 }

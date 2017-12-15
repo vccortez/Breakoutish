@@ -11,6 +11,12 @@ import android.view.Display
 import android.view.MotionEvent
 import android.view.SurfaceView
 
+/**
+ * Essa classe implementa a View de animação principal do jogo.
+ * No jogo **breakout**, o jogador controla um rebatedor e seu
+ * objetivo é rebater a bola para destruir os blocos restantes.
+ * TODO: adicionar e implementar uma interface que receba eventos [Tarefa B - Passo 1]
+ */
 class BreakoutView(context: Context, display: Display) : SurfaceView(context), Runnable {
   private var gameThread: HandlerThread? = null
   private var gameHandler: Handler? = null
@@ -239,6 +245,13 @@ class BreakoutView(context: Context, display: Display) : SurfaceView(context), R
       }
     }
     return true
+  }
+
+  // TODO: chamar essa função com o valor azimuth da orientação [Tarefa B - Passo 4]
+  private fun atualizarEixo(azimuth: Float) {
+    val seno = Math.sin(azimuth.toDouble()).toFloat()
+
+    touchXRatio = (1f + seno) / 2f
   }
 
   private fun updateTouchX(motionEventX: Float) {
